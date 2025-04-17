@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>My experiment</title>
+        <script src="jspsych/jspsych.js"></script>
+        <script src="jspsych/plugin-html-keyboard-response.js"></script>
+        <script src="jspsych/plugin-html-button-response.js"></script>
+        <script src="jspsych/plugin-image-button-response.js"></script>
+        <script src="jspsych/plugin-survey-text.js"></script>
+        <script src="jspsych/plugin-instructions.js"></script>
+        <script src="jspsych/plugin-fullscreen.js"></script>
+        <script src="jspsych/plugin-preload.js"></script>
+        <script src="jspsych/plugin-call-function.js"></script>
+        <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+        <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+        <link href="layout.css" rel="stylesheet" type="text/css" />
+    </head>
+    <body>
+        <div id="thank-you-container">
+            <div class="thank-you-content">
+                <h1 class="thank-you-title">Thank you for participating!</h1>
+                <p class="thank-you-message">Your contribution to our research is greatly appreciated.</p>
+            </div>
+            <div class="confetti-container" id="confetti-container"></div>
+        </div>
+    </body>
+    <script>
+        const jsPsych = initJsPsych({
+            show_progress_bar: true,
+            message_progress_bar: 'Your progress'
+        });
+
+        // Track progress for different experiment phases
+        let currentProgressMode = 'practice';
+        let practiceTrialCount = 0;
+        let experimentTrialCount = 0;
+        let groupId = 0;
+
+        /**
+         * Updates the progress bar manually by finding the element and setting its width
+         * @param {string} mode - Either 'practice' or 'experiment'
+         * @param {number} completed - Number of completed trials
+         * @param {number} total - Total number of trials
+         */
+        function updateCustomProgress(mode, completed, total) {
+            if (total <= 0) return;
+            
+            // Calculate progress percentage
+            const progress = Math.min(1, Math.max(0, completed / total));
+            const percent = Math.floor(progress * 100);
+            
+            // Find the progress bar element
+            const progressBar = document.querySelector('.jspsych-progress-bar-inner');
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
+            }
+            
+            // Update the progress message if needed
+            const progressText = document.querySelector('#jspsych-progressbar-container span');
+            if (progressText) {
+                progressText.textContent = mode === 'practice' ? 
+                    'Practice Progress' : 'Experiment Progress';
+            }
+        }
+
+        const welcome = {
+            type: jsPsychSurveyText,
+            questions: [
+                {
+                    prompt: `<h1>Welcome to the experiment!</h1><h1 style="color: white;">buffer</h1><h1>Please enter your participant ID below to begin:</h1>
+                    <p style="color: red;">If Prolific did not assign you an ID, please enter your birthday in the format DDMMYYYY.</p>
+                    <p style="color: red;">If you failed to input the valid ID, you will not get any payment after the experiment!</p>`, 
+                    required: true,
+                    name:  'participant_id',
+                    rows: 1
+                }
+            ],
+            data:{
+                trial_tag: "welcome"
+            },
+        }
+            
+        const prompt_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `<h1>Please select the choices to answer the question: </h1>
+            <h1 style='color: red;'>What is the person looking at?</h1>
+            <p>Press any key to get familar with the task.</p>`,
+        };
+
+        const thank_you = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '', // Empty stimulus as we'll show the thank-you container instead
+            choices: "NO_KEYS", // No keyboard response needed
+            trial_duration: null, // Show indefinitely
+            on_start: function() {
+                document.getElementById('thank-you-container').style.display = 'block'; // Show the thank you container
+                createConfetti(); // Create confetti effect
+                // TODO save data
+            }
+        };
+
+        // Function to load and parse CSV file
+        function loadCSV() {
+            return fetch('../output/stimuli_1743457603.csv')
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load CSV file');
+                    return response.text();
+                })
+                .then(text => {
+                    const rows = text.trim().split('\n');
+                
+                    // Use comma delimiter
+                    const headers = rows[0].split(',').map(h => h.trim());
+                    console.log("Detected headers:", headers);  // Should be individual column names
+                
+                    return rows.slice(1).map(row => {
+                        const values = row.split(',');  // <-- comma!
+                        return headers.reduce((obj, header, index) => {
+                            obj[header] = values[index] ? values[index].trim() : '';
+                            return obj;
+                        }, {});
+                    });
+                });
+        }
+
+        loadCSV()
+            .then(async data => {
+                const gid = await jsPsychPipe.getCondition('gEyB8UWCnhZP');
+                groupId = gid;
+                console.log(`Assigned groupId: ${groupId}`);
+
+                // Filter for practice items (list_id === "-1")
+                const practiceItems = data.filter(item => item.list_id === "-1");
+                
+                if (practiceItems.length === 0) {
+                    throw new Error('No practice items found with list_id=-1');
+                }
+                console.log('Practice items:', practiceItems);
+                
+                // Randomly select 3 practice items (or fewer if not enough available)
+                const selectedPracticeItems = [];
+                const practiceSampleSize = Math.min(3, practiceItems.length);
+                const practiceItemPool = [...practiceItems];
+                console.log('Practice Sample Size:', practiceSampleSize);
+                
+                for (let i = 0; i < practiceSampleSize; i++) {
+                    const randomIndex = Math.floor(Math.random() * practiceItemPool.length);
+                    selectedPracticeItems.push(practiceItemPool[randomIndex]);
+                    practiceItemPool.splice(randomIndex, 1);
+                }
+                
+                // Create practice trials with feedback
+                const practiceTrials = [];
+                
+                selectedPracticeItems.forEach(item => {
+                    // Parse candidates (options) from the Candidates field
+                    const candidates = item.Candidates.split('+');
+                    // The correct answer is stored in the label field
+                    const correctAnswer = item.label;
+                    
+                    // Main trial
+                    const trial = {
+                        //type: jsPsychImageButtonResponse,
+                        //stimulus: `../stimuli/gaze_${item.Stimulus_ID}.png`,
+                        type: jsPsychHtmlButtonResponse,
+                        stimulus: `
+                            <img style="height: 90vh; width: 100%;" src="../stimuli/gaze_${item.Stimulus_ID}.png">
+                        `,
+                        // button_layout: 'flex',
+                        choices: candidates,
+                        // prompt: "<p>What is the person looking at in the image?</p>",
+                        data: {
+                            trial_tag: "practice",
+                        },
+                        on_load: function() {
+                            document.body.style.overflow = 'hidden';
+                            // Style the container (image + button group)
+                            const container = document.getElementById('jspsych-content');
+                            container.style.display = 'flex';
+                            container.style.flexDirection = 'row'; // image + buttons side by side
+                            container.style.justifyContent = 'space-between'; // space between image and buttons
+                            container.style.alignItems = 'center'; // center buttons vertically
+                            //container.style.height = '100vh'; // ensure it takes full screen height
+                            container.style.boxSizing = 'border-box'; // prevent internal overflow
+                          
+                            // Style the button group
+                            const buttonGroup = document.getElementById('jspsych-html-button-response-btngroup');
+                            buttonGroup.style.display = 'flex';
+                            buttonGroup.style.flexDirection = 'column';      // Stack buttons vertically
+                            buttonGroup.style.alignItems = 'flex-start';     // Align buttons left (you can use 'center' if preferred)
+                            buttonGroup.style.marginLeft = '20px';           // Add spacing between image and buttons
+                        },
+                        on_finish: function(data) {
+                            // Calculate if response was correct
+                            const selectedChoice = candidates[data.response];
+                            data.correct = selectedChoice === correctAnswer;
+                        }
+                    };
+                    
+                    // Feedback trial
+                    const feedbackTrial = {
+                        type: jsPsychHtmlKeyboardResponse,
+                        stimulus: function() {
+                            const lastTrialCorrect = jsPsych.data.get().last(1).values()[0].correct;
+                            if(lastTrialCorrect) {
+                                return `<div style="font-size:60px; color:green;">✓</div><p>Correct!</p>`;
+                            } else {
+                                return `<div style="font-size:60px; color:red;">✗</div><p>The correct answer was: <b>${correctAnswer}</b></p>`;
+                            }
+                        },
+                        choices: "NO_KEYS",
+                        // choices: "ALL_KEYS",
+                        // prompt: "<p>Press any key to continue.</p>",
+                        trial_duration: 1500
+                    };
+                    
+                    // Add both trials
+                    practiceTrials.push(trial);
+                    practiceTrials.push(feedbackTrial);
+                });
+                
+                // Transition to main experiment 
+                const transitionTrial = {
+                    type: jsPsychHtmlKeyboardResponse,
+                    stimulus: `<h1>Now, you are ready for the following experiment.</h1>
+                    <p style="color: red;">Note: you will not receive any feedback of your response.</p>
+                    <p>Press any key to begin.</p>`,
+                    choices: "ALL_KEYS"
+                };
+                
+                // ========== MAIN EXPERIMENT SETUP ==========
+                
+                // Randomly select a list_id between 0 and 19 for the experiment
+                // const randomListId = Math.floor(Math.random() * 20).toString();
+                // groupId = randomListId;
+                
+                console.log(`Selected experiment list_id: ${groupId}`);
+                
+                // Get experiment items with the random list_id
+                const experimentItems = data.filter(item => item.list_id === String(groupId));
+                
+                if (experimentItems.length === 0) {
+                    throw new Error(`No experiment items found with list_id=${groupId}`);
+                }
+                console.log('Experiment items:', experimentItems.length);
+                
+                // Shuffle experiment items to randomize their order
+                const shuffledExperimentItems = jsPsych.randomization.shuffle(experimentItems);
+                console.log('Shuffled experiment items:', shuffledExperimentItems.length);
+                
+                // Get all sanity check items (list_id === "-1")
+                const sanityCheckItems = data.filter(item => item.list_id === "-1");
+                console.log('Sanity check items:', sanityCheckItems.length);
+                // const sanityCheckItems = [...practiceItems]; // Use all list_id -1 items as potential sanity checks
+                
+                // Create combined item list with sanity checks evenly distributed
+                let combinedItems = [];
+                
+                // Calculate how to distribute sanity checks
+                const totalExperimentItems = shuffledExperimentItems.length;
+                const totalSanityItems = sanityCheckItems.length;
+                
+                // If we have sanity check items, distribute them
+                if (totalSanityItems > 0) {
+                    // Calculate positions for sanity checks to ensure even distribution
+                    const sanityCheckPositions = [];
+                    const interval = totalExperimentItems / (totalSanityItems + 1);
+                    
+                    // Pre-calculate positions for sanity checks
+                    for (let i = 1; i <= totalSanityItems; i++) {
+                        // Calculate position with a small random offset for less predictability
+                        const position = Math.round(i * interval);
+                        sanityCheckPositions.push(position);
+                    }
+                    
+                    console.log('Sanity check positions:', sanityCheckPositions);
+                    
+                    // Interleave experiment items and sanity checks
+                    let experimentIndex = 0;
+                    let currentPosition = 0;
+                    
+                    // First add items before first sanity check
+                    while (experimentIndex < sanityCheckPositions[0]) {
+                        combinedItems.push(shuffledExperimentItems[experimentIndex]);
+                        experimentIndex++;
+                        currentPosition++;
+                    }
+                    
+                    // Then add alternating sanity checks and experiment items
+                    for (let i = 0; i < totalSanityItems; i++) {
+                        // Add a sanity check
+                        combinedItems.push(sanityCheckItems[i]);
+                        
+                        // Add experiment items until next sanity check or end
+                        const nextPosition = (i < totalSanityItems - 1) ? 
+                            sanityCheckPositions[i + 1] : totalExperimentItems;
+                        
+                        // Add experiment items until next sanity check
+                        while (experimentIndex < nextPosition && experimentIndex < totalExperimentItems) {
+                            combinedItems.push(shuffledExperimentItems[experimentIndex]);
+                            experimentIndex++;
+                        }
+                    }
+                    
+                    // Add any remaining experiment items
+                    while (experimentIndex < totalExperimentItems) {
+                        combinedItems.push(shuffledExperimentItems[experimentIndex]);
+                        experimentIndex++;
+                    }
+                } else {
+                    // If no sanity items, just use experiment items
+                    combinedItems = [...shuffledExperimentItems];
+                }
+                
+                // Log the final sequence to verify distribution
+                console.log('Final combined items:', combinedItems.map(item => 
+                    item.list_id === "-1" ? "SANITY_CHECK" : "EXP_ITEM").length);
+                
+                // Create the experiment trials (no feedback)
+                const experimentTrials = combinedItems.map(item => {
+                    // Parse candidates (options) from the Candidates field
+                    const candidates = item.Candidates.split('+');
+                    // The correct answer is stored in the label field
+                    const correctAnswer = item.label;
+                    
+                    return {
+                        //type: jsPsychImageButtonResponse,
+                        //stimulus: `../stimuli/gaze_${item.Stimulus_ID}.png`,
+                        type: jsPsychHtmlButtonResponse,
+                        stimulus: `
+                            <img style="height: 90vh; width: 100%;" src="../stimuli/gaze_${item.Stimulus_ID}.png">,
+                        `,
+                        choices: candidates,
+                        // prompt: "<p>What is the person looking at in the image?</p>",
+                        data: {
+                            trial_tag: "experiment",
+                            stimulus_id: item.Stimulus_ID,
+                            angle: item.Angle,
+                            proximity: item.Proximity,
+                            n_candidates: item.n_candidates,
+                            candidates: item.Candidates,
+                            actor: item.Actor,
+                            path: item.path,
+                            label: item.label,
+                            list_id: item.list_id,
+                        },
+                        on_load: function() {
+                            document.body.style.overflow = 'hidden';
+                            // Style the container (image + button group)
+                            const container = document.getElementById('jspsych-content');
+                            container.style.display = 'flex';
+                            container.style.flexDirection = 'row'; // image + buttons side by side
+                            container.style.justifyContent = 'space-between'; // space between image and buttons
+                            container.style.alignItems = 'center'; // center buttons vertically
+                            // container.style.height = '100vh'; // ensure it takes full screen height
+                            container.style.boxSizing = 'border-box'; // prevent internal overflow
+                          
+                            // Style the button group
+                            const buttonGroup = document.getElementById('jspsych-html-button-response-btngroup');
+                            buttonGroup.style.display = 'flex';
+                            buttonGroup.style.flexDirection = 'column';      // Stack buttons vertically
+                            buttonGroup.style.alignItems = 'flex-start';     // Align buttons left (you can use 'center' if preferred)
+                            buttonGroup.style.marginLeft = '20px';           // Add spacing between image and buttons
+                        },
+                        on_finish: function(data) {
+                            // Store response data but don't show feedback
+                            const selectedChoice = candidates[data.response];
+
+                            data.response_item = selectedChoice;
+                            data.accuracy = selectedChoice === correctAnswer;
+                            data.response_time = data.rt;
+
+                            const pidObj = jsPsych.data.get()
+                                .filter({ trial_tag: 'welcome' })
+                                .values()[0];
+                            data.participant_id = pidObj.response.participant_id;
+
+                            delete data.rt;
+                            delete data.response;
+                        }
+                    };
+                });
+                
+                // ========== PRELOAD SETUP ==========
+                
+                // Collect all image paths for preloading
+                const allImagePaths = [];
+                
+                // Add practice images
+                selectedPracticeItems.forEach(item => {
+                    allImagePaths.push(`../stimuli/gaze_${item.Stimulus_ID}.png`);
+                });
+                
+                // Add all experiment and sanity check images
+                combinedItems.forEach(item => {
+                    allImagePaths.push(`../stimuli/gaze_${item.Stimulus_ID}.png`);
+                });
+                
+                // Remove any duplicates
+                const uniqueImagePaths = [...new Set(allImagePaths)];
+                console.log('Preloading images:', uniqueImagePaths.length);
+                
+                // Create preload trial
+                const preloadTrial = {
+                    type: jsPsychPreload,
+                    images: uniqueImagePaths,
+                    message: '<h2>Loading experiment resources...</h2><p>Please wait while the images load. This may take a moment.</p>',
+                    show_progress_bar: true,
+                    continue_after_error: true,
+                    max_load_time: 60000, // 1 minute timeout
+                    error_message: '<h2>Loading Error</h2><p>Some resources fail to load. The experiment may not function correctly. Please try refreshing the page or contact the researcher.</p>'
+                };
+                
+                // Create enter fullscreen trial
+                const enterFullscreenTrial = {
+                    type: jsPsychFullscreen,
+                    fullscreen_mode: true,
+                    message: `<h2>Entering Fullscreen Mode</h2>
+                              <p>The experiment works best in fullscreen mode.</p>
+                              <p>Click the button below to continue in fullscreen.</p>`,
+                    button_label: "Enter Fullscreen",
+                    delay_after: 500 // brief delay after entering fullscreen
+                };
+
+                const saveData = {
+                    type: jsPsychPipe,
+                    action: 'save',
+                    experiment_id: 'gEyB8UWCnhZP',
+                    filename: () => {
+                      const pid = jsPsych.data.get()
+                        .filter({ trial_tag: 'welcome' })
+                        .values()[0].response.participant_id;
+                      const ts = new Date().toISOString().replace(/[:.]/g,'-');
+                      return `${groupId}_${pid}_${ts}.csv`;
+                    },
+                    data_string: () =>
+                      jsPsych.data.get().filter({ trial_tag: 'experiment' }).csv(),
+                    wait_message: `
+                      <div class="saving-text">
+                        <h1>Saving your data…</h1>
+                      </div>
+                    `,
+                    on_start: () => {
+                      // hide your main progress bar
+                      const bar = document.querySelector('#jspsych-progressbar-container');
+                      if (bar) bar.style.visibility = 'hidden';
+                    },
+                    on_finish: () => {
+                      // restore it after upload
+                      // const bar = document.querySelector('#jspsych-progressbar-container');
+                      // if (bar) bar.style.visibility = 'visible';
+                    },
+                    post_trial_gap: 500   // wait an extra 1 s before moving on
+                };
+                  
+                // Create exit fullscreen trial
+                const exitFullscreenTrial = {
+                    type: jsPsychFullscreen,
+                    fullscreen_mode: false,
+                    message: `<h2>Exiting Fullscreen Mode</h2>
+                              <p>The experiment is now complete.</p>
+                              <p>Click the button below to exit fullscreen mode.</p>`,
+                    button_label: "Exit Fullscreen",
+                    delay_after: 500 // brief delay after exiting fullscreen
+                };
+
+                // Update thank you trial to trigger after fullscreen exit
+                const updatedThankYou = {
+                    type: jsPsychHtmlKeyboardResponse,
+                    stimulus: '', // Empty stimulus as we'll show the thank-you container instead
+                    choices: "NO_KEYS", // No keyboard response needed
+                    trial_duration: null, // Show indefinitely
+                    on_start: function() {
+                        document.getElementById('thank-you-container').style.display = 'block'; // Show the thank you container
+                        createConfetti(); // Create confetti effect
+                    }
+                };
+                
+                var timeline = [];
+                // Create and run experiment timeline
+                timeline.push(welcome);
+                
+                // Add preload trial after welcome
+                timeline.push(preloadTrial);
+                
+                // Add fullscreen entry after preload but before experiment starts
+                timeline.push(enterFullscreenTrial);
+                
+                timeline.push(prompt_trial);
+                
+                // Calculate total practice trials (for progress bar)
+                practiceTrialCount = selectedPracticeItems.length;
+                
+                // Add all practice trials with feedback
+                practiceTrials.forEach((trial, index) => {
+                    // For the main trials (not feedback), update progress counter
+                    if (index % 2 === 0) { // Main trials are at even indices
+                        const originalOnFinish = trial.on_finish;
+                        trial.on_finish = function(data) {
+                            // Call original on_finish function
+                            if (originalOnFinish) originalOnFinish(data);
+                            
+                            // Update progress
+                            updateCustomProgress('practice', index / 2 + 1, practiceTrialCount);
+                        };
+                    }
+                    timeline.push(trial);
+                });
+                
+                // Add transition to main experiment
+                const originalTransitionOnFinish = transitionTrial.on_finish;
+                transitionTrial.on_finish = function(data) {
+                    if (originalTransitionOnFinish) originalTransitionOnFinish(data);
+                    
+                    // Switch to experiment phase and reset progress bar
+                    currentProgressMode = 'experiment';
+                    updateCustomProgress('experiment', 0, experimentTrialCount);
+                };
+                timeline.push(transitionTrial);
+                
+                // Calculate total experiment trials (for progress bar)
+                experimentTrialCount = experimentTrials.length;
+                
+                // Add all experiment trials (no feedback)
+                experimentTrials.forEach((trial, index) => {
+                    const originalOnFinish = trial.on_finish;
+                    trial.on_finish = function(data) {
+                        // Call original on_finish function
+                        if (originalOnFinish) originalOnFinish(data);
+                        
+                        // Update progress
+                        updateCustomProgress('experiment', index + 1, experimentTrialCount);
+                    };
+                    timeline.push(trial);
+                });
+
+                // saving data
+                timeline.push(saveData);
+                
+                // Add exit fullscreen before thank you
+                timeline.push(exitFullscreenTrial);
+                
+                // Add thank you trial (after exiting fullscreen)
+                timeline.push(updatedThankYou);
+                
+                // Run the experiment
+                jsPsych.run(timeline);
+            })
+            .catch(error => {
+                console.error('Error loading CSV or setting up experiment:', error);
+                // Display error message to user
+                document.body.innerHTML = `
+                    <div style="text-align: center; margin-top: 50px;">
+                        <h2>Error loading experiment</h2>
+                        <p>${error.message}</p>
+                        <p>Please contact the researcher for assistance.</p>
+                    </div>
+                `;
+            });
+
+        // Helper function to create a single experiment trial (kept for reference)
+        function createExperiment(directory, choices_list) {
+            return {
+                timeline: [{
+                    type: jsPsychImageButtonResponse,
+                    stimulus: directory,
+                    prompt: "<p>What is the person looking at in the image?</p>", 
+                    choices: choices_list,
+                }]
+            };
+        }
+        
+        /**
+         * Function to create confetti celebration effect
+         * Creates animated confetti elements with random properties
+         */
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            const colors = ['#f39c12', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#1abc9c', '#f1c40f'];
+            const shapes = ['square', 'circle'];
+            const confettiCount = 150;
+            
+            // Generate confetti
+            for (let i = 0; i < confettiCount; i++) {
+                let confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                // Randomize confetti properties
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                const left = Math.random() * 100; // random horizontal position
+                const size = Math.random() * 10 + 5; // random size between 5-15px
+                const animationDuration = (Math.random() * 3 + 2) + 's'; // between 2-5s
+                
+                // Apply random styles
+                confetti.style.backgroundColor = color;
+                confetti.style.left = left + '%';
+                confetti.style.width = size + 'px';
+                confetti.style.height = size + 'px';
+                confetti.style.animationDuration = animationDuration + ', ' + animationDuration;
+                
+                // Make some confetti circles
+                if (shape === 'circle') {
+                    confetti.style.borderRadius = '50%';
+                }
+                
+                // Add some delay to make it look more natural
+                confetti.style.animationDelay = Math.random() * 5 + 's';
+                
+                // Add to container
+                container.appendChild(confetti);
+            }
+        }
+
+    </script>
+</html>
