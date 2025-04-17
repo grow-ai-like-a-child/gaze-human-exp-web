@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>My experiment</title>
+        <title>Gaze Referential Understanding Experiment</title>
         <script src="jspsych/jspsych.js"></script>
         <script src="jspsych/plugin-html-keyboard-response.js"></script>
         <script src="jspsych/plugin-html-button-response.js"></script>
@@ -101,7 +101,7 @@
 
         // Function to load and parse CSV file
         function loadCSV() {
-            return fetch('../output/stimuli_1743457603.csv')
+            return fetch('./output/stimuli_1743457603.csv')
                 .then(response => {
                     if (!response.ok) throw new Error('Failed to load CSV file');
                     return response.text();
@@ -161,10 +161,10 @@
                     // Main trial
                     const trial = {
                         //type: jsPsychImageButtonResponse,
-                        //stimulus: `../stimuli/gaze_${item.Stimulus_ID}.png`,
+                        //stimulus: `./stimuli/gaze_${item.Stimulus_ID}.png`,
                         type: jsPsychHtmlButtonResponse,
                         stimulus: `
-                            <img style="height: 90vh; width: 100%;" src="../stimuli/gaze_${item.Stimulus_ID}.png">
+                            <img style="height: 90vh; width: 100%;" src="./stimuli/gaze_${item.Stimulus_ID}.png">
                         `,
                         // button_layout: 'flex',
                         choices: candidates,
@@ -325,10 +325,10 @@
                     
                     return {
                         //type: jsPsychImageButtonResponse,
-                        //stimulus: `../stimuli/gaze_${item.Stimulus_ID}.png`,
+                        //stimulus: `./stimuli/gaze_${item.Stimulus_ID}.png`,
                         type: jsPsychHtmlButtonResponse,
                         stimulus: `
-                            <img style="height: 90vh; width: 100%;" src="../stimuli/gaze_${item.Stimulus_ID}.png">,
+                            <img style="height: 90vh; width: 100%;" src="./stimuli/gaze_${item.Stimulus_ID}.png">,
                         `,
                         choices: candidates,
                         // prompt: "<p>What is the person looking at in the image?</p>",
@@ -388,12 +388,12 @@
                 
                 // Add practice images
                 selectedPracticeItems.forEach(item => {
-                    allImagePaths.push(`../stimuli/gaze_${item.Stimulus_ID}.png`);
+                    allImagePaths.push(`./stimuli/gaze_${item.Stimulus_ID}.png`);
                 });
                 
                 // Add all experiment and sanity check images
                 combinedItems.forEach(item => {
-                    allImagePaths.push(`../stimuli/gaze_${item.Stimulus_ID}.png`);
+                    allImagePaths.push(`./stimuli/gaze_${item.Stimulus_ID}.png`);
                 });
                 
                 // Remove any duplicates
