@@ -318,11 +318,22 @@
                     item.list_id === "-1" ? "SANITY_CHECK" : "EXP_ITEM").length);
                 
                 // Create the experiment trials (no feedback)
-                const experimentTrials = combinedItems.map(item => {
+                const experimentTrials = combinedItems.map((item, index) => {
                     // Parse candidates (options) from the Candidates field
-                    var candidates = item.Candidates.split('+');
+                    var candidates_ = item.Candidates.split('+');
                     // console.log('Candidates:', candidates);
-                    candidates = jsPsych.randomization.shuffle(candidates);
+                    candidates = jsPsych.randomization.shuffle(candidates_);
+
+                    var options = [
+                    ...candidates,
+                    ...Array(4).fill('')].slice(0, 4);
+
+                    if (index < 3) {
+                        console.log('Raw candidates for trial #${index}:', candidates_);
+                        console.log('Shuffled candidates for trial #${index}:', candidates);
+                        console.log(`Options for trial #${index}:`, options);
+                    }
+
                     // console.log('Shuffled candidates:', candidates);
                     // The correct answer is stored in the label field
                     const correctAnswer = item.label;
@@ -332,7 +343,7 @@
                         //stimulus: `./stimuli/gaze_${item.Stimulus_ID}.png`,
                         type: jsPsychHtmlButtonResponse,
                         stimulus: `
-                            <img style="height: 90vh; width: 100%;" src="./stimuli/gaze_${item.Stimulus_ID}.png">,
+                            <img style="height: 90vh; width: 100%;" src="./stimuli/gaze_${item.Stimulus_ID}.png">
                         `,
                         choices: candidates,
                         // prompt: "<p>What is the person looking at in the image?</p>",
@@ -343,6 +354,10 @@
                             proximity: item.Proximity,
                             n_candidates: item.n_candidates,
                             candidates: item.Candidates,
+                            choiceA: options[0],
+                            choiceB: options[1],
+                            choiceC: options[2],
+                            choiceD: options[3],
                             actor: item.Actor,
                             path: item.path,
                             label: item.label,
