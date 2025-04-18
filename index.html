@@ -19,7 +19,7 @@
         <div id="thank-you-container">
             <div class="thank-you-content">
                 <h1 class="thank-you-title">Thank you for participating!</h1>
-                <p class="thank-you-message">Your contribution to our research is greatly appreciated.</p>
+                <p class="thank-you-message">Your contribution to our research is greatly appreciated. Please copy the completion code to Prolific: ${{ vars.COMPLETION_CODE }}</p>
             </div>
             <div class="confetti-container" id="confetti-container"></div>
         </div>
@@ -67,9 +67,8 @@
             type: jsPsychSurveyText,
             questions: [
                 {
-                    prompt: `<h1>Welcome to the experiment!</h1><h1 style="color: white;">buffer</h1><h1>Please enter your participant ID below to begin:</h1>
-                    <p style="color: red;">If Prolific did not assign you an ID, please enter your birthday in the format DDMMYYYY.</p>
-                    <p style="color: red;">If you failed to input the valid ID, you will not get any payment after the experiment!</p>`, 
+                    prompt: `<h1>Welcome to the experiment!</h1><h1 style="color: white;">buffer</h1><h1>Please enter your Prolific ID:</h1>
+                    <p style="color: red;">If you failed to input the valid ID, you will not get the payment after the experiment!</p>`, 
                     required: true,
                     name:  'participant_id',
                     rows: 1
@@ -84,7 +83,7 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: `<h1>Please select the choices to answer the question: </h1>
             <h1 style='color: red;'>What is the person looking at?</h1>
-            <p>Press any key to get familar with the task.</p>`,
+            <p>Press any key to enter practice trials. (You must use a computer.)</p>`,
         };
 
         const thank_you = {
@@ -95,7 +94,6 @@
             on_start: function() {
                 document.getElementById('thank-you-container').style.display = 'block'; // Show the thank you container
                 createConfetti(); // Create confetti effect
-                // TODO save data
             }
         };
 
@@ -223,7 +221,7 @@
                 const transitionTrial = {
                     type: jsPsychHtmlKeyboardResponse,
                     stimulus: `<h1>Now, you are ready for the following experiment.</h1>
-                    <p style="color: red;">Note: you will not receive any feedback of your response.</p>
+                    <p style="color: red;">Note: You will not receive any feedback on your response, but some of the trials are attention checks, and if you fail any of them, your participation will be rejected.</p>
                     <p>Press any key to begin.</p>`,
                     choices: "ALL_KEYS"
                 };
@@ -416,8 +414,8 @@
                     type: jsPsychFullscreen,
                     fullscreen_mode: true,
                     message: `<h2>Entering Fullscreen Mode</h2>
-                              <p>The experiment works best in fullscreen mode.</p>
-                              <p>Click the button below to continue in fullscreen.</p>`,
+                              <p>The experiment must work in full-screen mode.</p>
+                              <p>Click the button below to enter full-screen mode.</p>`,
                     button_label: "Enter Fullscreen",
                     delay_after: 500 // brief delay after entering fullscreen
                 };
