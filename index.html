@@ -19,7 +19,9 @@
         <div id="thank-you-container">
             <div class="thank-you-content">
                 <h1 class="thank-you-title">Thank you for participating!</h1>
-                <p class="thank-you-message">Your contribution to our research is greatly appreciated. Please copy the completion code to Prolific: __COMPLETION_CODE__</p>
+                <p class="thank-you-message">Your contribution to our research is greatly appreciated. <br> 
+                    Please copy the completion code to Prolific: <span id="completion-code">__COMPLETION_CODE__</span>
+                </p>
             </div>
             <div class="confetti-container" id="confetti-container"></div>
         </div>
@@ -67,7 +69,7 @@
             type: jsPsychSurveyText,
             questions: [
                 {
-                    prompt: `<h1>Welcome to the experiment!</h1><h1 style="color: white;">buffer</h1><h1>Please enter your Prolific ID:</h1>
+                    prompt: `<h1>Welcome to the experiment!</h1><h1 style="color: white;">buffer</h1><h2>Please enter your Prolific ID:</h2>
                     <p style="color: red;">If you failed to input the valid ID, you will not get the payment after the experiment!</p>`, 
                     required: true,
                     name:  'participant_id',
@@ -221,7 +223,8 @@
                 const transitionTrial = {
                     type: jsPsychHtmlKeyboardResponse,
                     stimulus: `<h1>Now, you are ready for the following experiment.</h1>
-                    <p style="color: red;">Note: You will not receive any feedback on your response, but some of the trials are attention checks, and if you fail any of them, your participation will be rejected.</p>
+                    <p style="color: red;">You will not receive any feedback on your response</p>
+                    <p style="color: red;">Some trials are attention checks, and if you fail any of them, your participation will be rejected.</p>
                     <p>Press any key to begin.</p>`,
                     choices: "ALL_KEYS"
                 };
@@ -317,7 +320,10 @@
                 // Create the experiment trials (no feedback)
                 const experimentTrials = combinedItems.map(item => {
                     // Parse candidates (options) from the Candidates field
-                    const candidates = item.Candidates.split('+');
+                    var candidates = item.Candidates.split('+');
+                    // console.log('Candidates:', candidates);
+                    candidates = jsPsych.randomization.shuffle(candidates);
+                    // console.log('Shuffled candidates:', candidates);
                     // The correct answer is stored in the label field
                     const correctAnswer = item.label;
                     
@@ -402,11 +408,14 @@
                 const preloadTrial = {
                     type: jsPsychPreload,
                     images: uniqueImagePaths,
-                    message: '<h2>Loading experiment resources...</h2><p>Please wait while the images load. This may take a moment.</p>',
+                    message: `<h2>Loading experiment resources...</h2>
+                              <p>Please wait while the images load. This may take a moment.</p>`,
                     show_progress_bar: true,
                     continue_after_error: true,
                     max_load_time: 60000, // 1 minute timeout
-                    error_message: '<h2>Loading Error</h2><p>Some resources fail to load. The experiment may not function correctly. Please try refreshing the page or contact the researcher.</p>'
+                    error_message: `<h2>Loading Error</h2>
+                    <p>Some resources fail to load. The experiment may not function correctly.</p>
+                    <p>Please try refreshing the page or contact the researcher.</p>`
                 };
                 
                 // Create enter fullscreen trial
