@@ -27,7 +27,7 @@ jobs:
           sed -i "s|__COMPLETION_CODE__|${{ secrets.COMPLETION_CODE }}|g" index.html
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: .  # or your output folder
 
