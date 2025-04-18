@@ -1,0 +1,265 @@
+#experiment-container {
+    display: none;
+    flex-direction: column;
+    height: 100vh; /* Full viewport height */
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+  
+#top-section {
+    flex: 1;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+/* Update middle section to fill more space */
+#middle-section {
+    flex: 8;
+    background-color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    height: 70vh; /* Set a specific height for the middle section */
+}
+
+/* Style for image container to take up most of the middle section */
+.image-container {
+    flex: 5; /* Increased from 4 to take more space */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%; /* Make container take full height */
+    overflow: hidden; /* Prevent overflow */
+    position: relative; /* Enable positioning context for the hover effect */
+}
+
+.image-container img {
+    height: 100%; /* Make image fill the height of its container */
+    max-width: 100%;
+    object-fit: contain; /* Maintain aspect ratio */
+    transition: transform 0.3s ease; /* Add smooth transition for hover effect */
+    cursor: pointer; /* Show pointer cursor on hover */
+}
+
+/* Add hover effect to increase image size */
+.image-container img:hover {
+    transform: scale(1.1); /* Increase size by 10% on hover */
+    z-index: 10; /* Make sure image stays on top */
+}
+
+/* Make sure the enlarged image doesn't break layout */
+.image-container:hover {
+    overflow: visible; /* Allow the image to overflow on hover */
+}
+
+/* Make buttons container smaller to give more space to the image */
+.buttons-container {
+    flex: 1;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* Make buttons look nicer in the middle section */
+.buttons-container .jspsych-image-button-response-button-group {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* Keep bottom section available for future use */
+#bottom-section {
+    flex: 1;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+/* Hide the default jsPsych container during our custom layout */
+.jspsych-content {
+    max-width: 100% !important;
+}
+
+/* Ensure the image is responsive */
+.jspsych-image-button-response-stimulus {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* Enhance button styling */
+.jspsych-btn {
+    padding: 12px 24px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 5px;
+    border: none;
+    margin: 5 0px;
+    cursor: pointer;
+    background-color: #f8f8f8; /* Neutral background color */
+    color: #333; /* Dark text color */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    min-width: 200px;
+    height: 50px;
+}
+
+.jspsych-btn:hover {
+    background-color: #e8e8e8; /* Slightly darker on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* Styles for thank you page and confetti */
+#thank-you-container {
+    display: none;
+    text-align: center;
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: white;
+    z-index: 1000;
+}
+
+.thank-you-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+}
+
+.thank-you-title {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    animation: scale-in 1.2s ease-out;
+}
+
+.thank-you-message {
+    font-size: 1.5rem;
+    color: #3498db;
+    margin-bottom: 30px;
+    animation: fade-in 2s ease-out;
+}
+
+/* Confetti container */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #f39c12;
+    z-index: 1000;
+    opacity: 0.7;
+    animation-name: confetti-fall, confetti-shake;
+    animation-duration: 3s, 2s;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite;
+}
+
+/* Pulse animation for buttons */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+/* Animations */
+@keyframes confetti-fall {
+    0% { top: -10%; }
+    100% { top: 100%; }
+}
+
+@keyframes confetti-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(7px); }
+    50% { transform: translateX(-7px); }
+    75% { transform: translateX(3px); }
+}
+
+@keyframes scale-in {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-in {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Welcome screen styling */
+.welcome-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    text-align: center;
+}
+
+.welcome-container h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+    animation: fade-in 1s ease-out;
+}
+
+.welcome-container p {
+    font-size: 1.2rem;
+    color: #666;
+    animation: fade-in 1.5s ease-out;
+}
+
+.spinner {
+    margin: 2em auto;
+    width: 50px; height: 50px;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+.saving-text {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 1.2em;
+    z-index: 1000;
+}
