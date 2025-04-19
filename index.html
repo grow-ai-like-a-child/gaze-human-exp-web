@@ -19,8 +19,8 @@
         <div id="thank-you-container">
             <div class="thank-you-content">
                 <h1 class="thank-you-title">Thank you for participating!</h1>
-                <p class="thank-you-message">Your contribution to our research is greatly appreciated. <br> 
-                    Please copy the completion code to Prolific: <span id="completion-code">__COMPLETION_CODE__</span>
+                <p class="thank-you-message">
+                    Please copy the completion code to Prolific: <span id="completion-code"><b>C1D4VIXJ</b></span>
                 </p>
             </div>
             <div class="confetti-container" id="confetti-container"></div>
@@ -322,15 +322,15 @@
                     // Parse candidates (options) from the Candidates field
                     var candidates_ = item.Candidates.split('+');
                     // console.log('Candidates:', candidates);
-                    candidates = jsPsych.randomization.shuffle(candidates_);
+                    const candidates = jsPsych.randomization.shuffle(candidates_);
 
                     var options = [
                     ...candidates,
                     ...Array(4).fill('')].slice(0, 4);
 
                     if (index < 3) {
-                        console.log('Raw candidates for trial #${index}:', candidates_);
-                        console.log('Shuffled candidates for trial #${index}:', candidates);
+                        console.log(`Raw candidates for trial #${index}:`, candidates_);
+                        console.log(`Shuffled candidates for trial #${index}:`, candidates);
                         console.log(`Options for trial #${index}:`, options);
                     }
 
