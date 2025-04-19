@@ -222,10 +222,8 @@
                 // Transition to main experiment 
                 const transitionTrial = {
                     type: jsPsychHtmlKeyboardResponse,
-                    stimulus: `<h1>Now, you are ready for the following experiment.</h1>
-                    <p style="color: red;">You will not receive any feedback on your response</p>
-                    <p style="color: red;">Some trials are attention checks, and if you fail any of them, your participation will be rejected.</p>
-                    <p>Press any key to begin.</p>`,
+                    stimulus: `<h1 style="color: red;">Now, you are ready for the following experiment. Some trials are attention checks, and if you fail any of them, your participation will be rejected.</h1>
+                    <p>You will not receive any feedback on your response. Press any key to begin.</p>
                     choices: "ALL_KEYS"
                 };
                 
