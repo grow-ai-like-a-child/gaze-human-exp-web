@@ -65,6 +65,16 @@
             }
         }
 
+        const deviceCheckTrial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+                <h1>Before participating our experiment, please check your device!</h1>
+                <h1 style="color: red;">You must use a PC or laptop for the following experiment.</h1>
+                <p>Press <b style="color: red;">F</b> on your keyboard to begin.</p>
+            `,
+            choices: ['f'],
+        };
+
         const welcome = {
             type: jsPsychSurveyText,
             questions: [
@@ -83,9 +93,12 @@
             
         const prompt_trial = {
             type: jsPsychHtmlKeyboardResponse,
-            stimulus: `<h1>Please select the choices to answer the question: </h1>
+            stimulus: `
+            <h1>Please select the choices to answer the question: </h1>
             <h1 style='color: red;'>What is the person looking at?</h1>
-            <p>Press any key to enter practice trials. (You must use a computer.)</p>`,
+            <p>Press <b style="color: red;">Enter</b> on your keyboard to begin.</p>
+            `,
+            choices: ['Enter'],
         };
 
         const thank_you = {
@@ -222,9 +235,14 @@
                 // Transition to main experiment 
                 const transitionTrial = {
                     type: jsPsychHtmlKeyboardResponse,
-                    stimulus: `<h1 style="color: red;">Now, you are ready for the following experiment. Some trials are attention checks, and if you fail any of them, your participation will be rejected.</h1>
-                    <p>You will not receive any feedback on your response. Press any key to begin.</p>
-                    choices: "ALL_KEYS"
+                    stimulus: `
+                        <h1>Now, you are ready for the following experiment.</h1>
+                        <h1>Note that some trials include <em style="color: red;">ATTENTION CHECKS</em>.</h1>
+                        <h1>If you fail any of them, your participation will be <em style="color: red;">REJECTED</em>.</h1>
+                        <p>You will not receive any feedback on your response.</p>
+                        <p>Press <b style="color: red;">B</b> to begin.</p>
+                    `,
+                    choices: ['b'],
                 };
                 
                 // ========== MAIN EXPERIMENT SETUP ==========
@@ -498,6 +516,8 @@
                 
                 var timeline = [];
                 // Create and run experiment timeline
+                timeline.push(deviceCheckTrial);
+
                 timeline.push(welcome);
                 
                 // Add preload trial after welcome

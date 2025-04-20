@@ -1,7 +1,8 @@
 gaze
 pipeline_stimuli
-# stimuli
-# output
+stimuli
+output
+human
 plots
 vlm_result
 **/*.DS_Store
