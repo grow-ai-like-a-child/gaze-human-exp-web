@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Gaze Referential Understanding Experiment</title>
-        <script src="jspsych/jspsych.js"></script>
+        <script src="jspsych/jspsych.js"></script> <!-- v8 -->
         <script src="jspsych/plugin-html-keyboard-response.js"></script>
         <script src="jspsych/plugin-html-button-response.js"></script>
         <script src="jspsych/plugin-image-button-response.js"></script>
@@ -37,6 +37,7 @@
         let practiceTrialCount = 0;
         let experimentTrialCount = 0;
         let groupId = 0;
+        let version_id = "1.0_20250420";
 
         /**
          * Updates the progress bar manually by finding the element and setting its width
@@ -378,6 +379,7 @@
                             path: item.path,
                             label: item.label,
                             list_id: item.list_id,
+                            version: version_id,
                         },
                         on_load: function() {
                             document.body.style.overflow = 'hidden';
